@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Invitación - Café o Sushi</title>
+
+    <style>
+        /* LAYOUT GENERAL */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #000;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* CONTENEDOR DE BRILLITOS */
+        #sparkles {
+            position: absolute;
+            inset: 0; /* top:0;right:0;bottom:0;left:0; */
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+            border-radius: 50%;
+            opacity: 0;
+            transform: translate3d(0,0,0);
+            will-change: transform, opacity;
+            animation-name: sparklePulse, floatAround;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+        }
+
+        @keyframes sparklePulse {
+            0%   { opacity: 0; transform: scale(0.8); }
+            50%  { opacity: 1; transform: scale(1.8); }
+            100% { opacity: 0; transform: scale(0.9); }
+        }
+
+        @keyframes floatAround {
+            0%   { transform: translate3d(var(--dx,0px), var(--dy-start,0px), 0) scale(var(--s,1)); }
+            50%  { transform: translate3d(calc(var(--dx,0px) + var(--moveX,0px)), calc(var(--dy-start,0px) + var(--moveY,0px)), 0) scale(calc(var(--s,1) * 1.2)); }
+            100% { transform: translate3d(var(--dx,0px), var(--dy-start,0px), 0) scale(var(--s,1)); }
+        }
+
+        /* TARJETA (CARD) */
+        .card {
+            position: relative;
+            z-index: 2; /* encima de los brillitos */
+            background: rgba(20,20,20,0.92);
+            padding: 26px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+            width: 360px;
+            max-width: 94%;
+            color: #efefef;
+            backdrop-filter: blur(6px);
+        }
+
+        h1 { color: #ffdca3; margin: 0 0 8px 0; font-size: 22px; }
+        p { color: #ddd; margin: 0 0 14px 0; font-size: 15px; }
+
+        .choices { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
+        .btn {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: transform .12s ease, opacity .12s ease;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+        }
+        .btn:active { transform: translateY(2px); }
+
+        .coffee { background: linear-gradient(180deg,#e6b976,#d99d4f); color: #1b1308; }
+        .sushi  { background: linear-gradient(180deg,#8ee2d6,#49bbae); color: #042f2f; }
+        .no     { background: linear-gradient(180deg,#ff7b7b,#e84b4b); color: #2b0000; }
+
+        .input-box {
+            margin-top: 14px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .small { font-size: 13px; color: #bfbfbf; margin-bottom: 6px; }
+
+        textarea {
+            width: 100%;
+            min-height: 70px;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.02);
+            color: #f5f5f5;
+            resize: vertical;
+            font-size: 14px;
+        }
+
+        .send-btn {
+            background: linear-gradient(180deg,#a87bd6,#6a4c93);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            box-shadow: 0 6px 18px rgba(106,76,147,0.2);
+        }
+
+        .selected-indicator { font-weight: 600; color: #fff; }
+
+        /* responsivo menor */
+        @media (max-width: 420px) {
+            .card { padding: 18px; width: 92%; }
+            .btn { padding: 8px 10px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Brillitos de fondo -->
+    <div id="sparkles" aria-hidden="true"></div>
+
+    <div class="card" role="main" aria-live="polite">
+        <h1>¿Salimos?</h1>
+        <p>No supe como escribirte, entonces te hice una invitación... ¿Te gustaría tomar un <strong>café</strong> o salir a cenar <strong>sushi</strong>?</p>
+
+        <div class="choices">
+            <button class="btn coffee" onclick="opcionCafe()">Café ☕</button>
+            <button class="btn sushi" onclick="opcionSushi()">Sushi 🍣</button>
+            <button class="btn no" onclick="rechazar()">No, gracias</button>
+        </div>
+
+        <div id="respuestaBox" class="input-box" aria-hidden="true">
+            <div class="small">Seleccionaste: <span id="seleccionSpan" class="selected-indicator">—</span></div>
+            <p style="margin:6px 0 0 0; color:#ddd">¿Cuándo estarías libre? (opcional)</p>
+            <textarea id="mensaje" placeholder="Ej: El viernes a las 18:30 o el domingo por la tarde..."></textarea>
+            <button class="send-btn" onclick="enviarMensaje()">Enviar respuesta y abrir WhatsApp</button>
+        </div>
+    </div>
+
+    <script>
+        /* CONFIGURAR: reemplazá por tus datos */
+        const FORM_EMAIL = "YOUR_EMAIL_HERE"; // ej: "miemail@gmail.com"
+        const WHATSAPP_NUMBER = "5950984336719";  // ej: "595981234567" (sin + ni guiones)
+
+        let eleccion = "";
+
+        function opcionCafe() {
+            eleccion = "Café";
+            mostrarCajaRespuesta();
+        }
+
+        function opcionSushi() {
+            eleccion = "Sushi";
+            mostrarCajaRespuesta();
+        }
+
+        function mostrarCajaRespuesta() {
+            document.getElementById("seleccionSpan").textContent = eleccion;
+            const box = document.getElementById("respuestaBox");
+            box.style.display = "flex";
+            box.setAttribute("aria-hidden", "false");
+        }
+
+        // Si el usuario elige "No" -> abrimos WhatsApp con mensaje "No, gracias"
+        function rechazar() {
+            eleccion = "No";
+            const mensaje = encodeURIComponent("Hola, elegí: No ");
+            const waUrl = "https://wa.me/" + encodeURIComponent(5950984336719) + "?text=" + mensaje;
+            // Abrimos WhatsApp (pasa al chat del receptor)
+            window.location.href = waUrl;
+        }
+
+        // Enviar a FormSubmit (email) solo si eligió Café o Sushi
+        function enviarPorEmail(texto) {
+            if (!FORM_EMAIL || FORM_EMAIL === "YOUR_EMAIL_HERE") return;
+            const url = "https://formsubmit.co/" + encodeURIComponent(FORM_EMAIL);
+
+            const body = new URLSearchParams();
+            body.append("respuesta", texto);
+
+            // Envío "fire-and-forget"
+            fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: body.toString()
+            }).catch(err => {
+                console.error("Error al enviar por email:", err);
+            });
+        }
+
+        function enviarMensaje() {
+            if (!eleccion || eleccion === "No") {
+                alert("Elegí Café o Sushi primero.");
+                return;
+            }
+
+            const textoUsuario = document.getElementById("mensaje").value.trim();
+            const textoEmail = "Elección: " + eleccion + " | Mensaje: " + (textoUsuario || "(sin mensaje)");
+
+            enviarPorEmail(textoEmail);
+
+            const waTexto = encodeURIComponent("Hola! Elegí: " + eleccion + (textoUsuario ? " — " + textoUsuario : ""));
+            const waUrl = "https://wa.me/" + encodeURIComponent(5950984336719) + "?text=" + waTexto;
+
+            // Redirigimos para abrir WhatsApp
+            window.location.href = waUrl;
+        }
+
+        /* ---------- BRILLITOS (GENERA 80 elementos con variación) ---------- */
+        (function crearBrillitos() {
+            const cont = document.getElementById("sparkles");
+            if (!cont) return;
+
+            const total = 80;
+            for (let i = 0; i < total; i++) {
+                const s = document.createElement("div");
+                s.className = "sparkle";
+
+                // Posición inicial en porcentaje para evitar scroll issues
+                const left = Math.random() * 100; // %
+                const top = Math.random() * 100;  // %
+
+                // Tamaño aleatorio
+                const size = 1 + Math.random() * 3; // entre 1px y 4px
+                s.style.width = size + "px";
+                s.style.height = size + "px";
+
+                // Variables CSS para controlar el movimiento y duración
+                const dx = (Math.random() * 40 - 20) + "px"; // movimiento en X durante animación
+                const dy = (Math.random() * 30 - 15) + "px"; // movimiento en Y durante animación
+                const moveX = (Math.random() * 40 - 20) + "px";
+                const moveY = (Math.random() * 30 - 15) + "px";
+                const startY = (Math.random() * 10 - 5) + "px";
+
+                s.style.left = left + "vw";
+                s.style.top = top + "vh";
+                s.style.setProperty("--dx", dx);
+                s.style.setProperty("--dy-start", startY);
+                s.style.setProperty("--moveX", moveX);
+                s.style.setProperty("--moveY", moveY);
+                s.style.setProperty("--s", (0.6 + Math.random() * 1.6).toString());
+
+                // Duración y delay aleatorios
+                const dur = 2 + Math.random() * 3; // 2s a 5s
+                const delay = Math.random() * 4;   // 0s a 4s
+                s.style.animationDuration = dur + "s, " + (dur + 0.8) + "s";
+                s.style.animationDelay = delay + "s";
+
+                // opacidad base random
+                s.style.opacity = (0.3 + Math.random() * 0.8).toString();
+
+                cont.appendChild(s);
+            }
+        })();
+    </script>
+</body>
+</html>
+
+
+
